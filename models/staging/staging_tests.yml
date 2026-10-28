@@ -27,7 +27,7 @@ models:
 
       - name: discount_applied
         data_tests:
-          - accepted_range:
+          - range: 
               arguments:
                 min_value: 0
                 max_value: 1
