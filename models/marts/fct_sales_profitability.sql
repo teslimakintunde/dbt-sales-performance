@@ -1,0 +1,37 @@
+
+{{ config(materialized='table') }}
+
+select
+    line_item_id,
+    order_id,
+    customer_id,
+    product_id,
+    product_name,
+    product_category,
+    subcategory,
+    brand,
+    region,
+    sales_channel,
+    payment_method,
+    campaign_id,
+    warehouse_id,
+    order_priority,
+    order_date,
+    delivery_status,
+    quantity,
+    unit_price,
+    unit_cost,
+    discount_applied,
+    gross_revenue,
+    discount_amount,
+    sales_after_discount,
+    recognized_revenue,
+    cost_of_goods_sold,
+    shipping_cost_amount,
+    estimated_fulfillment_cost,
+    estimated_contribution_profit,
+    estimated_contribution_margin_pct,
+    discount_band,
+    is_cancelled,
+    return_requested
+from {{ ref('int_sales_enriched') }}

@@ -1,0 +1,11 @@
+
+version: 2
+
+sources:
+  - name: raw_sales_data
+    database: dbt-sales-performance
+    schema: sales_data
+    tables:
+      - name: sales
+      - name: customers
+      - name: products
