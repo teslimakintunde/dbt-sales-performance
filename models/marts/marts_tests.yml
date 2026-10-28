@@ -1,0 +1,52 @@
+
+version: 2
+
+models:
+  - name: int_sales_enriched
+    columns:
+      - name: line_item_id
+        data_tests:
+          - not_null
+          - unique
+
+  - name: fct_sales_profitability
+    columns:
+      - name: line_item_id
+        data_tests:
+          - not_null
+          - unique
+
+  - name: fct_delivery_performance
+    columns:
+      - name: order_id
+        data_tests:
+          - not_null
+          - unique
+
+  - name: fct_customer_value
+    columns:
+      - name: customer_id
+        data_tests:
+          - not_null
+          - unique
+
+  - name: fct_product_performance
+    columns:
+      - name: product_id
+        data_tests:
+          - not_null
+          - unique
+
+  - name: fct_inventory_risk
+    columns:
+      - name: product_id
+        data_tests:
+          - not_null
+          - unique
+
+  - name: fct_commercial_risk
+    columns:
+      - name: order_id
+        data_tests:
+          - not_null
+          - unique

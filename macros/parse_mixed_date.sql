@@ -1,30 +1,46 @@
 {% macro parse_mixed_date(column_expression) %}
   case
+    -- 1. Handle Nulls/Blanks Safely
     when nullif(trim(cast({{ column_expression }} as string)), '') is null then null
 
-    -- ISO format: 2024-06-09
-    when regexp_contains(nullif(trim(cast({{ column_expression }} as string)), ''), r'^\d{4}-\d{2}-\d{2}$')
-      then safe.parse_date('%Y-%m-%d', nullif(trim(cast({{ column_expression }} as string)), ''))
+    -- 2. Master Case logic using clean strings with 'Sept' replaced inline
+    else
+      -- We create a local Jinja variable to hold the string base cleaning to keep things readable
+      {% set clean_string = "regexp_replace(nullif(trim(cast(" ~ column_expression ~ " as string)), ''), r'(?i)-Sept-', '-Sep-')" %}
+      
+      case
+        -- YYYY-MM-DD
+        when regexp_contains({{ clean_string }}, r'^[0-9]{4}-[0-9]{2}-[0-9]{2}$')
+          then safe.parse_date('%Y-%m-%d', {{ clean_string }})
 
-    -- Text month: 09-Jun-24 or 09-Jun-2024
-    when regexp_contains(nullif(trim(cast({{ column_expression }} as string)), ''), r'^\d{1,2}-[A-Za-z]{3,4}-\d{2}$')
-      then safe.parse_date('%d-%b-%y', regexp_replace(nullif(trim(cast({{ column_expression }} as string)), ''), r'(?i)-Sept-', '-Sep-'))
+        -- DD-MMM-YYYY (e.g., 09-Jun-2024)
+        when regexp_contains({{ clean_string }}, r'^[0-9]{2}-[A-Za-z]{3}-[0-9]{4}$')
+          then safe.parse_date('%d-%b-%Y', {{ clean_string }})
 
-    when regexp_contains(nullif(trim(cast({{ column_expression }} as string)), ''), r'^\d{1,2}-[A-Za-z]{3,4}-\d{4}$')
-      then safe.parse_date('%d-%b-%Y', regexp_replace(nullif(trim(cast({{ column_expression }} as string)), ''), r'(?i)-Sept-', '-Sep-'))
+        -- DD-MMM-YY (e.g., 09-Jun-24)
+        when regexp_contains({{ clean_string }}, r'^[0-9]{2}-[A-Za-z]{3}-[0-9]{2}$')
+          then safe.parse_date('%d-%b-%y', {{ clean_string }})
 
-    -- Numeric day-month-year, e.g. 25-10-26
-    when regexp_contains(nullif(trim(cast({{ column_expression }} as string)), ''), r'^\d{1,2}-\d{1,2}-\d{2}$')
-      then safe.parse_date('%d-%m-%y', nullif(trim(cast({{ column_expression }} as string)), ''))
+        -- DD-MM-YY (e.g., 25-10-26)
+        when regexp_contains({{ clean_string }}, r'^[0-9]{2}-[0-9]{2}-[0-9]{2}$')
+          then safe.parse_date('%d-%m-%y', {{ clean_string }})
 
-    -- Slash dates: explicitly apply the chosen convention
-    when regexp_contains(nullif(trim(cast({{ column_expression }} as string)), ''), r'^\d{1,2}/\d{1,2}/\d{4}$')
-      then case
-        when safe_cast(split(nullif(trim(cast({{ column_expression }} as string)), ''), '/')[safe_offset(0)] as int64) > 12
-          then safe.parse_date('%d/%m/%Y', nullif(trim(cast({{ column_expression }} as string)), ''))
-        else safe.parse_date('%m/%d/%Y', nullif(trim(cast({{ column_expression }} as string)), ''))
+        -- Slashes (M/D/YYYY or D/M/YYYY configurations)
+        when regexp_contains({{ clean_string }}, r'^[0-9]{1,2}/[0-9]{1,2}/[0-9]{4}$') then
+          case 
+            -- If first element (Day) > 12 -> dd/mm/yyyy
+            when safe_cast(split({{ clean_string }}, '/')[safe_offset(0)] as int64) > 12
+              then safe.parse_date('%d/%m/%Y', {{ clean_string }})
+            
+            -- If second element (Month) > 12 -> mm/dd/yyyy
+            when safe_cast(split({{ clean_string }}, '/')[safe_offset(1)] as int64) > 12
+              then safe.parse_date('%m/%d/%Y', {{ clean_string }})
+            
+            -- Fallback fallback if neither > 12 (ambiguous like 05/06/2024), default to US or standard
+            else safe.parse_date('%m/%d/%Y', {{ clean_string }})
+          end
+
+        else null
       end
-
-    else null
   end
 {% endmacro %}
