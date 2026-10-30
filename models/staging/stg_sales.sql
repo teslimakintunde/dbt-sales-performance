@@ -26,7 +26,7 @@ cleaned as (
                in ('delivered', 'deliverd', 'delivred', 'deliverred')
             then 'Delivered'
           when lower(trim(cast(delivery_status as string)))
-               in ('delayed', 'delayyed', 'delayd')
+               in ('delayed', 'delayyed', 'delayd','Delaied')
             then 'Delayed'
           when lower(trim(cast(delivery_status as string)))
                in ('cancelled', 'canceled', 'cancled')

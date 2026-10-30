@@ -1,4 +1,3 @@
-
 version: 2
 
 models:
@@ -8,6 +7,14 @@ models:
         data_tests:
           - not_null
           - unique
+      - name: product_id
+        data_tests:
+          - relationships:
+              arguments: # ✅ FIX: Moves field and to parameters into the proper arguments block
+                to: ref('stg_products')
+                field: product_id
+              config:
+                severity: warn
 
   - name: fct_sales_profitability
     columns:
@@ -22,6 +29,13 @@ models:
         data_tests:
           - not_null
           - unique
+      - name: delivery_variance_days
+        data_tests:
+          - dbt_utils.accepted_range:
+              arguments:
+                max_value: 21
+              config:
+                severity: warn
 
   - name: fct_customer_value
     columns:
@@ -30,12 +44,19 @@ models:
           - not_null
           - unique
 
-  - name: fct_product_performance
+  - name: fct_customer_acquisition
     columns:
-      - name: product_id
+      - name: signup_month
         data_tests:
           - not_null
-          - unique
+
+  - name: fct_product_performance
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - product_id
+              - order_month
 
   - name: fct_inventory_risk
     columns:
@@ -46,7 +67,7 @@ models:
 
   - name: fct_commercial_risk
     columns:
-      - name: order_id
+      - name: line_item_id
         data_tests:
           - not_null
           - unique
